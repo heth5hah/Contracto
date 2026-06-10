@@ -1,0 +1,17 @@
+﻿
+   info - Don't invoke 'print' in production code - 
+lib\core\services\sync_error_handler.dart:31:11 - avoid_print
+   info - Don't invoke 'print' in production code - 
+lib\core\services\sync_error_handler.dart:35:9 - avoid_print
+   info - Don't invoke 'print' in production code - 
+lib\core\services\sync_error_handler.dart:36:9 - avoid_print
+   info - Don't invoke 'print' in production code - 
+lib\core\services\sync_error_handler.dart:118:5 - avoid_print
+   info - Don't invoke 'print' in production code - 
+lib\core\services\sync_error_handler.dart:119:5 - avoid_print
+   info - Don't invoke 'print' in production code - 
+lib\core\services\sync_error_handler.dart:121:7 - avoid_print
+   info - Don't invoke 'print' in production code - 
+lib\core\services\sync_error_handler.dart:123:5 - avoid_print
+
+

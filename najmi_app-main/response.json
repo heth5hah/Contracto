@@ -1,0 +1,10 @@
+{
+  "error": {
+    "code": "BAD_REQUEST_ERROR",
+    "description": "Amount exceeds maximum amount allowed.",
+    "metadata": {},
+    "reason": "NA",
+    "source": "internal",
+    "step": "NA"
+  }
+}

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contracto Admin - Dashboard</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="../js/theme.js"></script>
+</head>
+<body class="dashboard-page">
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="../assets/images/contracto.png" alt="Contracto Logo" class="sidebar-logo">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="ri-arrow-left-line"></i>
+            </button>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="active">
+                <a href="dashboard.html">
+                    <i class="ri-dashboard-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="products.html">
+                    <i class="ri-shopping-bag-line"></i>
+                    <span>Products</span>
+                </a>
+            </li>
+            <li>
+                <a href="brands.html">
+                    <i class="ri-bookmark-line"></i>
+                    <span>Brands</span>
+                </a>
+            </li>
+            <li>
+                <a href="quotations.html">
+                    <i class="ri-file-list-line"></i>
+                    <span>Quotations</span>
+                </a>
+            </li>
+            <li>
+                <a href="users.html">
+                    <i class="ri-user-line"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            <li>
+                <a href="settings.html">
+                    <i class="ri-settings-line"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="user-welcome">
+                <span>Hey <span id="userName"></span></span>
+            </div>
+            <div class="search-bar">
+                <i class="ri-search-line"></i>
+                <input type="text" placeholder="Search...">
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="dashboard-grid">
+            <div class="stats-card">
+                <div class="stats-icon" style="background-color: #E3F2FD;">
+                    <i class="ri-shopping-cart-line" style="color: #1976D2;"></i>
+                </div>
+                <div class="stats-info">
+                    <h3 id="totalQuotes">0</h3>
+                    <p>Total Quotes</p>
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stats-icon" style="background-color: #E8F5E9;">
+                    <i class="ri-check-line" style="color: #2E7D32;"></i>
+                </div>
+                <div class="stats-info">
+                    <h3 id="acceptedQuotes">0</h3>
+                    <p>Accepted Quotes</p>
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stats-icon" style="background-color: #FFF3E0;">
+                    <i class="ri-time-line" style="color: #E65100;"></i>
+                </div>
+                <div class="stats-info">
+                    <h3 id="pendingQuotes">0</h3>
+                    <p>Pending Quotes</p>
+                </div>
+            </div>
+
+            <div class="stats-card">
+                <div class="stats-icon" style="background-color: #F3E5F5;">
+                    <i class="ri-user-line" style="color: #7B1FA2;"></i>
+                </div>
+                <div class="stats-info">
+                    <h3 id="totalUsers">0</h3>
+                    <p>Total Users</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-grid">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Monthly Revenue</h3>
+                    <span class="chart-period">Last 6 Months</span>
+                </div>
+                <canvas id="revenueChart" class="chart-canvas"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Quote Trends</h3>
+                    <span class="chart-period">Last 6 Months</span>
+                </div>
+                <canvas id="quotesChart" class="chart-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Data Tables Grid -->
+        <div class="tables-grid">
+            <!-- Recent Quotations -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Recent Quotations</h2>
+                    <a href="quotations.html" class="btn-text">View All</a>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Quote ID</th>
+                                <th>User</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentQuotesTable">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Users -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Recent Users</h2>
+                    <a href="users.html" class="btn-text">View All</a>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Company</th>
+                                <th>PAN</th>
+                                <th>Business Type</th>
+                                <th>Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentUsersTable">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/theme.js"></script>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/dashboard.js"></script>
+</body>
+</html> 

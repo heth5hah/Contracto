@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contracto Admin - Brands</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="../js/theme.js"></script>
+</head>
+<body class="dashboard-page">
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="../assets/images/contracto.png" alt="Contracto Logo" class="sidebar-logo">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="ri-arrow-left-line"></i>
+            </button>
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="dashboard.html">
+                    <i class="ri-dashboard-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="products.html">
+                    <i class="ri-shopping-bag-line"></i>
+                    <span>Products</span>
+                </a>
+            </li>
+            <li class="active">
+                <a href="brands.html">
+                    <i class="ri-bookmark-line"></i>
+                    <span>Brands</span>
+                </a>
+            </li>
+            <li>
+                <a href="quotations.html">
+                    <i class="ri-file-list-line"></i>
+                    <span>Quotations</span>
+                </a>
+            </li>
+            <li>
+                <a href="users.html">
+                    <i class="ri-user-line"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            <li>
+                <a href="settings.html">
+                    <i class="ri-settings-line"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="user-welcome">
+                <span>Hey <span id="userName"></span></span>
+            </div>
+            <div class="search-bar">
+                <i class="ri-search-line"></i>
+                <input type="text" id="searchBrands" placeholder="Search brands...">
+            </div>
+            <div class="user-menu">
+                <span id="userEmail"></span>
+            </div>
+        </header>
+
+        <div class="content-header">
+            <h1>Brands Management</h1>
+            <button class="btn-primary" onclick="openAddBrandModal()">
+                <i class="ri-add-line"></i>
+                Add Brand
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="brandsTable">
+                        <!-- Brands will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Brand Modal -->
+    <div id="brandModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Brand</h2>
+                <button onclick="closeBrandModal()" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="brandForm">
+                    <div class="form-group">
+                        <label for="brandName">Brand Name</label>
+                        <input type="text" id="brandName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="brandDescription">Description</label>
+                        <textarea id="brandDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="logoUrl">Logo URL (optional)</label>
+                        <input type="url" id="logoUrl">
+                    </div>
+                    <div class="form-group">
+                        <label for="isActive">Status</label>
+                        <select id="isActive" required>
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" onclick="closeBrandModal()" class="btn-secondary">Cancel</button>
+                        <button type="submit" class="btn-primary">Save Brand</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/brands.js"></script>
+</body>
+</html> 

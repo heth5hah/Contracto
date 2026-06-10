@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contracto Admin - Categories</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="../js/theme.js"></script>
+</head>
+<body class="dashboard-page">
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="../assets/images/contracto.png" alt="Contracto Logo" class="sidebar-logo">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="ri-arrow-left-line"></i>
+            </button>
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="dashboard.html">
+                    <i class="ri-dashboard-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="products.html">
+                    <i class="ri-shopping-bag-line"></i>
+                    <span>Products</span>
+                </a>
+            </li>
+            <li>
+                <a href="brands.html">
+                    <i class="ri-bookmark-line"></i>
+                    <span>Brands</span>
+                </a>
+            </li>
+            <li class="active">
+                <a href="categories.html">
+                    <i class="ri-layout-grid-line"></i>
+                    <span>Categories</span>
+                </a>
+            </li>
+            <li>
+                <a href="quotations.html">
+                    <i class="ri-file-list-line"></i>
+                    <span>Quotations</span>
+                </a>
+            </li>
+            <li>
+                <a href="users.html">
+                    <i class="ri-user-line"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            <li>
+                <a href="settings.html">
+                    <i class="ri-settings-line"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="user-welcome">
+                <span>Hey <span id="userName"></span></span>
+            </div>
+            <div class="search-bar">
+                <i class="ri-search-line"></i>
+                <input type="text" id="categorySearch" placeholder="Search categories...">
+            </div>
+            <div class="user-menu">
+                <span id="userEmail"></span>
+            </div>
+        </header>
+
+        <div class="content-header">
+            <h1>Categories Management</h1>
+            <button class="btn-primary" id="addCategoryBtn">
+                <i class="ri-add-line"></i>
+                Add Category
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Subcategories</th>
+                            <th>Status</th>
+                            <th>Product Count</th>
+                            <th>Created At</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriesTable">
+                        <!-- Categories will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Category Modal -->
+    <div id="addCategoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Category</h2>
+                <button onclick="categoriesManager.hideAddCategoryModal()" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addCategoryForm" class="modal-form">
+                    <div class="form-group">
+                        <label for="categoryName">Category Name *</label>
+                        <input type="text" id="categoryName" name="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="categoryDescription">Description</label>
+                        <textarea id="categoryDescription" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="categorySubcategories">Subcategories (one per line)</label>
+                        <textarea id="categorySubcategories" name="subcategories" rows="5" placeholder="Enter subcategories, one per line..."></textarea>
+                        <small class="help-text">Enter each subcategory on a new line</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="categoryActive">Status</label>
+                        <select id="categoryActive" name="is_active">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" onclick="categoriesManager.hideAddCategoryModal()" class="btn-secondary">Cancel</button>
+                        <button type="submit" class="btn-primary">
+                            <i class="ri-add-line"></i>
+                            Add Category
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Category Modal -->
+    <div id="editCategoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Category</h2>
+                <button onclick="categoriesManager.hideEditCategoryModal()" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editCategoryForm" class="modal-form">
+                    <input type="hidden" id="editCategoryId" name="id">
+                    
+                    <div class="form-group">
+                        <label for="editCategoryName">Category Name *</label>
+                        <input type="text" id="editCategoryName" name="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editCategoryDescription">Description</label>
+                        <textarea id="editCategoryDescription" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editCategorySubcategories">Subcategories (one per line)</label>
+                        <textarea id="editCategorySubcategories" name="subcategories" rows="5" placeholder="Enter subcategories, one per line..."></textarea>
+                        <small class="help-text">Enter each subcategory on a new line</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editCategoryActive">Status</label>
+                        <select id="editCategoryActive" name="is_active">
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" onclick="categoriesManager.hideEditCategoryModal()" class="btn-secondary">Cancel</button>
+                        <button type="submit" class="btn-primary">
+                            <i class="ri-save-line"></i>
+                            Update Category
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/categories.js"></script>
+</body>
+</html> 

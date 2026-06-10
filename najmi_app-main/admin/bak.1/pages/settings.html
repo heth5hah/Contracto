@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contracto Admin - Settings</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body class="dashboard-page">
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="../assets/images/contracto.png" alt="Contracto Logo" class="sidebar-logo">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="ri-arrow-left-line"></i>
+            </button>
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="dashboard.html">
+                    <i class="ri-dashboard-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="products.html">
+                    <i class="ri-shopping-bag-line"></i>
+                    <span>Products</span>
+                </a>
+            </li>
+            <li>
+                <a href="brands.html">
+                    <i class="ri-bookmark-line"></i>
+                    <span>Brands</span>
+                </a>
+            </li>
+            <li>
+                <a href="quotations.html">
+                    <i class="ri-file-list-line"></i>
+                    <span>Quotations</span>
+                </a>
+            </li>
+            <li>
+                <a href="users.html">
+                    <i class="ri-user-line"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            <li class="active">
+                <a href="settings.html">
+                    <i class="ri-settings-line"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="user-welcome">
+                <span>Hey <span id="userName"></span></span>
+            </div>
+            <div class="search-bar">
+                <i class="ri-search-line"></i>
+                <input type="text" placeholder="Search...">
+            </div>
+        </header>
+
+        <div class="content-header">
+            <h1>Settings</h1>
+            <p>Customize your experience</p>
+        </div>
+
+        <div class="settings-container">
+            <!-- Theme Settings -->
+            <div class="settings-card">
+                <div class="settings-card-header">
+                    <div class="settings-icon">
+                        <i class="ri-palette-line"></i>
+                    </div>
+                    <div>
+                        <h3>Appearance</h3>
+                        <p>Customize the look and feel of your dashboard</p>
+                    </div>
+                </div>
+                <div class="settings-card-content">
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <label for="darkMode">Dark Mode</label>
+                            <span class="setting-description">Switch between light and dark themes</span>
+                        </div>
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="darkMode" class="toggle-input">
+                            <label for="darkMode" class="toggle-label">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logout Section -->
+            <div class="settings-card">
+                <div class="settings-card-header">
+                    <div class="settings-icon">
+                        <i class="ri-logout-box-line"></i>
+                    </div>
+                    <div>
+                        <h3>Session</h3>
+                        <p>Manage your login session</p>
+                    </div>
+                </div>
+                <div class="settings-card-content">
+                    <button id="logoutBtn" class="btn-danger">
+                        <i class="ri-logout-box-line"></i>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/theme.js"></script>
+    <script>
+        // Load saved theme on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const darkModeToggle = document.getElementById('darkMode');
+            
+            // Set initial state based on current theme
+            darkModeToggle.checked = document.body.classList.contains('dark-mode');
+            
+            // Handle theme toggle
+            darkModeToggle.addEventListener('change', function() {
+                window.toggleTheme(this.checked);
+            });
+        });
+    </script>
+</body>
+</html> 

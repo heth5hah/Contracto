@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contracto Admin - Quote Requests</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="../js/theme.js"></script>
+</head>
+<body class="dashboard-page">
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="../assets/images/contracto.png" alt="Contracto Logo" class="sidebar-logo">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="ri-arrow-left-line"></i>
+            </button>
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="dashboard.html">
+                    <i class="ri-dashboard-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="products.html">
+                    <i class="ri-shopping-bag-line"></i>
+                    <span>Products</span>
+                </a>
+            </li>
+            <li>
+                <a href="brands.html">
+                    <i class="ri-bookmark-line"></i>
+                    <span>Brands</span>
+                </a>
+            </li>
+            <li class="active">
+                <a href="quotations.html">
+                    <i class="ri-file-list-line"></i>
+                    <span>Quotations</span>
+                </a>
+            </li>
+            <li>
+                <a href="users.html">
+                    <i class="ri-user-line"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            <li>
+                <a href="settings.html">
+                    <i class="ri-settings-line"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="user-welcome">
+                <span>Hey <span id="userName"></span></span>
+            </div>
+            <div class="search-bar">
+                <i class="ri-search-line"></i>
+                <input type="text" id="searchQuotes" placeholder="Search quote requests...">
+            </div>
+            <div class="user-menu">
+                <span id="userEmail"></span>
+            </div>
+        </header>
+
+        <div class="content-header">
+            <h1>Quote Requests</h1>
+            <div class="filter-group">
+                <select id="statusFilter" class="filter-select">
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="quoted">Quoted</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="expired">Expired</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quoteRequestsTable">
+                        <!-- Quote requests will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- View Quote Request Modal -->
+    <div id="quoteRequestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Quote Request Details</h2>
+                <button onclick="closeQuoteModal()" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="quote-details">
+                    <div class="customer-info">
+                        <h3>Customer Information</h3>
+                        <p><strong>Name:</strong> <span id="customerName"></span></p>
+                        <p><strong>Mobile:</strong> <span id="customerMobile"></span></p>
+                        <p><strong>Email:</strong> <span id="customerEmail"></span></p>
+                        <p><strong>GST:</strong> <span id="customerGST"></span></p>
+                    </div>
+                    
+                    <div class="delivery-info">
+                        <h3>Delivery Address</h3>
+                        <p id="deliveryAddress"></p>
+                    </div>
+
+                    <div class="requested-items">
+                        <h3>Requested Items</h3>
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Brand</th>
+                                    <th>Quantity</th>
+                                    <th>Unit</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requestedItemsTable">
+                                <!-- Items will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="notes-section">
+                        <h3>Customer Notes</h3>
+                        <p id="customerNotes"></p>
+                    </div>
+                </div>
+
+                <form id="generateQuoteForm" class="quote-form">
+                    <h3>Generate Quote</h3>
+                    <div class="quote-items">
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Brand</th>
+                                    <th>Quantity</th>
+                                    <th>Unit</th>
+                                    <th>Unit Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quoteItemsTable">
+                                <!-- Quote items will be added here -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="4" class="text-right"><strong>Subtotal:</strong></td>
+                                    <td>₹<span id="subtotal">0.00</span></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-right"><strong>Tax (18%):</strong></td>
+                                    <td>₹<span id="tax">0.00</span></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="4" class="text-right"><strong>Grand Total:</strong></td>
+                                    <td>₹<span id="grandTotal">0.00</span></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="validityPeriod">Validity Period (Days)</label>
+                        <input type="number" id="validityPeriod" value="7" min="1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="paymentTerms">Payment Terms</label>
+                        <textarea id="paymentTerms" rows="2" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="additionalNotes">Additional Notes</label>
+                        <textarea id="additionalNotes" rows="3"></textarea>
+                    </div>
+
+                    <div class="payment-details">
+                        <h3>Payment Details</h3>
+                        <div class="form-group">
+                            <label for="bankName">Bank Name</label>
+                            <input type="text" id="bankName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="accountNumber">Account Number</label>
+                            <input type="text" id="accountNumber" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="ifscCode">IFSC Code</label>
+                            <input type="text" id="ifscCode" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="upiId">UPI ID</label>
+                            <input type="text" id="upiId">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" onclick="closeQuoteModal()" class="btn-secondary">Cancel</button>
+                        <button type="submit" class="btn-primary">Generate Quote & Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/quotations.js"></script>
+</body>
+</html> 

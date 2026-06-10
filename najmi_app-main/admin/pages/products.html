@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contracto Admin - Products</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="../js/theme.js"></script>
+</head>
+<body class="dashboard-page">
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="../assets/images/contracto.png" alt="Contracto Logo" class="sidebar-logo">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="ri-arrow-left-line"></i>
+            </button>
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="dashboard.html">
+                    <i class="ri-dashboard-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="active">
+                <a href="products.html">
+                    <i class="ri-shopping-bag-line"></i>
+                    <span>Products</span>
+                </a>
+            </li>
+            <li>
+                <a href="brands.html">
+                    <i class="ri-bookmark-line"></i>
+                    <span>Brands</span>
+                </a>
+            </li>
+            <li>
+                <a href="categories.html">
+                    <i class="ri-layout-grid-line"></i>
+                    <span>Categories</span>
+                </a>
+            </li>
+            <li>
+                <a href="quotations.html">
+                    <i class="ri-file-list-line"></i>
+                    <span>Quotations</span>
+                </a>
+            </li>
+            <li>
+                <a href="users.html">
+                    <i class="ri-user-line"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            <li>
+                <a href="settings.html">
+                    <i class="ri-settings-line"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="user-welcome">
+                <span>Hey <span id="userName"></span></span>
+            </div>
+            <div class="search-bar">
+                <i class="ri-search-line"></i>
+                <input type="text" id="searchProducts" placeholder="Search products...">
+            </div>
+            <div class="user-menu">
+                <span id="userEmail"></span>
+            </div>
+        </header>
+
+        <div class="content-header">
+            <h1>Products</h1>
+            <button class="btn-primary" onclick="openAddProductModal()">
+                <i class="ri-add-line"></i>
+                Add Product
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Product ID</th>
+                            <th>Photo</th>
+                            <th>Brand</th>
+                            <th>Category</th>
+                            <th>Subcategory</th>
+                            <th>Product Name</th>
+                            <th>Unit</th>
+                            <th>Stock Status</th>
+                            <th>Pricing Type</th>
+                            <th>Price/Status</th>
+                            <th>Quality Options</th>
+                            <th>Description</th>
+                            <th>HSN Number</th>
+                            <th>GST %</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTable">
+                        <!-- Products will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add/Edit Product Modal -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Product</h2>
+                <button onclick="closeProductModal()" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm">
+                    <!-- Basic Information Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">Basic Information</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="productId" class="required">Product ID</label>
+                                <input type="text" id="productId" required placeholder="Enter unique product ID">
+                            </div>
+                            <div class="form-group">
+                                <label for="productName" class="required">Product Name</label>
+                                <input type="text" id="productName" required placeholder="Enter product name">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="productUnit">Unit</label>
+                                <select id="productUnit">
+                                    <option value="">Select Unit</option>
+                                    <!-- Will be populated by JavaScript -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="stockStatus">Stock Status</label>
+                                <select id="stockStatus" required>
+                                    <option value="in_stock">In Stock</option>
+                                    <option value="out_of_stock">Out of Stock</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Information Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">Category Information</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="brandIds">Brands (Optional - Multiple Selection)</label>
+                                <div class="brand-selection-container">
+                                    <div id="selectedBrands" class="selected-brands">
+                                        <!-- Selected brands will be displayed here -->
+                                    </div>
+                                    <div class="brand-search-container">
+                                        <input type="text" id="brandSearch" placeholder="Search brands..." class="brand-search-input">
+                                        <div id="brandDropdown" class="brand-dropdown" style="display: none;">
+                                            <!-- Brand options will be loaded here -->
+                                        </div>
+                                    </div>
+                                    <button type="button" class="quick-add-btn" onclick="openQuickAddBrand()">
+                                        <i class="ri-add-line"></i>
+                                        New Brand
+                                    </button>
+                                </div>
+                                <small class="help-text">Select multiple brands or leave empty for no brand</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="category" class="required">Category</label>
+                                <div class="autocomplete-container">
+                                    <input type="text" id="category" class="autocomplete-input" placeholder="Search or type category..." required>
+                                    <div id="categoryDropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                                    <button type="button" class="quick-add-btn" onclick="openQuickAddCategory()">
+                                        <i class="ri-add-line"></i>
+                                        New
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-row subcategory-row">
+                            <div class="form-group">
+                                <label for="subcategory">Subcategory</label>
+                                <div class="autocomplete-container">
+                                    <input type="text" id="subcategory" class="autocomplete-input" placeholder="Search or type subcategory...">
+                                    <div id="subcategoryDropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                                    <button type="button" class="quick-add-btn" onclick="openQuickAddSubcategory()">
+                                        <i class="ri-add-line"></i>
+                                        New
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <!-- Empty space for alignment -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing Type Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">Pricing Configuration</h3>
+                        <div class="form-row full-width">
+                            <div class="form-group">
+                                <label for="pricingType" class="required">Pricing Type</label>
+                                <select id="pricingType" required onchange="togglePricingFields()">
+                                    <option value="">Select Pricing Type</option>
+                                    <option value="fixed_price">Fixed Price - Display price for sale</option>
+                                    <option value="whatsapp_request">No Price - Ask user to request on WhatsApp</option>
+                                    <option value="quote_request">Request Quote - Send quote request to admin</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Fixed Price Fields -->
+                        <div id="fixedPriceFields" class="pricing-fields" style="display: none;">
+                            <div class="form-row pricing-row">
+                                <div class="form-group">
+                                    <label for="mrp">MRP</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">₹</span>
+                                        <input type="number" id="mrp" step="0.01" placeholder="Enter MRP" onchange="updatePricingFromMRP()">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="discountPercent">Discount %</label>
+                                    <div class="input-group">
+                                        <input type="number" id="discountPercent" min="0" max="100" step="0.01" placeholder="Discount %" onchange="updatePricingFromDiscount()">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="finalPrice">Final Price</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">₹</span>
+                                        <input type="number" id="finalPrice" step="0.01" placeholder="Enter Final Price" onchange="updatePricingFromFinalPrice()">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- WhatsApp Request Fields -->
+                        <div id="whatsappFields" class="pricing-fields" style="display: none;">
+                            <div class="form-row full-width">
+                                <div class="form-group">
+                                    <label for="whatsappMessage">WhatsApp Message</label>
+                                    <textarea id="whatsappMessage" rows="2" placeholder="Custom message for WhatsApp request (optional)"></textarea>
+                                    <small class="help-text">Leave empty to use default message</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quote Request Fields -->
+                        <div id="quoteRequestFields" class="pricing-fields" style="display: none;">
+                            <div class="form-row full-width">
+                                <div class="form-group">
+                                    <label for="quoteInstructions">Quote Instructions</label>
+                                    <textarea id="quoteInstructions" rows="2" placeholder="Instructions for quote request (optional)"></textarea>
+                                    <small class="help-text">Additional instructions for quote requests</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product Details Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">Product Details</h3>
+                        <div class="form-row full-width">
+                            <div class="form-group">
+                                <label for="qualityOptions">Quality Options with Pricing (Optional)</label>
+                                <div class="quality-options-container">
+                                    <div id="qualityOptionsContainer" class="quality-options-list">
+                                        <!-- Quality options will be added here -->
+                                    </div>
+                                    <button type="button" onclick="addQualityOption()" class="btn-add-option">
+                                        <i class="ri-add-line"></i>
+                                        Add Quality Option
+                                    </button>
+                                </div>
+                                <small class="help-text">Add different quality/size options with their respective prices (e.g., 5 kg - ₹100, 10 kg - ₹180)</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row full-width">
+                            <div class="form-group">
+                                <label for="productDescription">Description</label>
+                                <textarea id="productDescription" rows="3" placeholder="Enter product description"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-row full-width">
+                            <div class="form-group">
+                                <label for="productPhotos">Product Photos</label>
+                                <div class="photo-upload-container" id="photoUploadContainer">
+                                    <input type="file" id="productPhotos" accept="image/png,image/jpeg" multiple style="display: none;">
+                                    <div class="upload-prompt">
+                                        <i class="ri-upload-cloud-2-line"></i>
+                                        <p>Drag & drop photos here or <span class="upload-link">click to browse</span></p>
+                                        <small>PNG, JPEG files up to 20MB each</small>
+                                    </div>
+                                    <div id="photoPreview" class="photo-preview"></div>
+                                </div>
+                                <small class="help-text">Multiple photos allowed. Drag and drop supported.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tax Information Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">Tax Information</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="hsnNumber">HSN Number</label>
+                                <input type="text" id="hsnNumber" placeholder="Enter HSN number">
+                            </div>
+                            <div class="form-group">
+                                <label for="gstPercent">GST Percent</label>
+                                <select id="gstPercent">
+                                    <option value="">Select GST %</option>
+                                    <option value="5">5%</option>
+                                    <option value="12">12%</option>
+                                    <option value="18">18%</option>
+                                    <option value="28">28%</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" onclick="closeProductModal()" class="btn-secondary">Cancel</button>
+                        <button type="submit" class="btn-primary">
+                            <i class="ri-save-line"></i>
+                            Save Product
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Add Brand Modal -->
+    <div id="quickAddBrandModal" class="modal">
+        <div class="modal-content small-modal">
+            <div class="modal-header">
+                <h2>Add New Brand</h2>
+                <button onclick="closeQuickAddBrandModal()" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="quickAddBrandForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quickBrandName" class="required">Brand Name</label>
+                            <input type="text" id="quickBrandName" required placeholder="Enter brand name">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quickBrandDescription">Description</label>
+                            <textarea id="quickBrandDescription" rows="2" placeholder="Enter brand description"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" onclick="closeQuickAddBrandModal()" class="btn-secondary">Cancel</button>
+                        <button type="submit" class="btn-primary">
+                            <i class="ri-add-line"></i>
+                            Add Brand
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Add Category Modal -->
+    <div id="quickAddCategoryModal" class="modal">
+        <div class="modal-content small-modal">
+            <div class="modal-header">
+                <h2>Add New Category</h2>
+                <button onclick="closeQuickAddCategoryModal()" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="quickAddCategoryForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quickCategoryName" class="required">Category Name</label>
+                            <input type="text" id="quickCategoryName" required placeholder="Enter category name">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quickCategoryDescription">Description</label>
+                            <textarea id="quickCategoryDescription" rows="2" placeholder="Enter category description"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" onclick="closeQuickAddCategoryModal()" class="btn-secondary">Cancel</button>
+                        <button type="submit" class="btn-primary">
+                            <i class="ri-add-line"></i>
+                            Add Category
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Add Subcategory Modal -->
+    <div id="quickAddSubcategoryModal" class="modal">
+        <div class="modal-content small-modal">
+            <div class="modal-header">
+                <h2>Add New Subcategory</h2>
+                <button onclick="closeQuickAddSubcategoryModal()" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="quickAddSubcategoryForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quickSubcategoryCategory" class="required">Parent Category</label>
+                            <select id="quickSubcategoryCategory" required>
+                                <option value="">Select Category</option>
+                                <option value="BATH & FAUCET">BATH & FAUCET</option>
+                                <option value="BUILDING MATERIAL">BUILDING MATERIAL</option>
+                                <option value="ASIAN PAINTS">ASIAN PAINTS</option>
+                                <option value="PLUMBING">PLUMBING</option>
+                                <option value="TOOLS">TOOLS</option>
+                                <option value="PUMP">PUMP</option>
+                                <option value="DUSTBINS">DUSTBINS</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quickSubcategoryName" class="required">Subcategory Name</label>
+                            <input type="text" id="quickSubcategoryName" required placeholder="Enter subcategory name">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" onclick="closeQuickAddSubcategoryModal()" class="btn-secondary">Cancel</button>
+                        <button type="submit" class="btn-primary">
+                            <i class="ri-add-line"></i>
+                            Add Subcategory
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/products.js"></script>
+</body>
+</html> 

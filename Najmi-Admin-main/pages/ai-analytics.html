@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contracto Admin - AI Analytics</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="../js/theme.js"></script>
+</head>
+<body class="dashboard-page">
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="../assets/images/contracto.png" alt="Contracto Logo" class="sidebar-logo">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="ri-arrow-left-line"></i>
+            </button>
+        </div>
+        <ul class="sidebar-menu">
+            <li>
+                <a href="dashboard.html">
+                    <i class="ri-dashboard-line"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="products.html">
+                    <i class="ri-shopping-bag-line"></i>
+                    <span>Products</span>
+                </a>
+            </li>
+            <li>
+                <a href="brands.html">
+                    <i class="ri-bookmark-line"></i>
+                    <span>Brands</span>
+                </a>
+            </li>
+            <li>
+                <a href="categories.html">
+                    <i class="ri-layout-grid-line"></i>
+                    <span>Categories</span>
+                </a>
+            </li>
+            <li>
+                <a href="featured.html">
+                    <i class="ri-star-line"></i>
+                    <span>Featured</span>
+                </a>
+            </li>
+            <li class="active">
+                <a href="ai-analytics.html">
+                    <i class="ri-robot-line"></i>
+                    <span>AI Analytics</span>
+                </a>
+            </li>
+            <li>
+                <a href="quotations.html">
+                    <i class="ri-file-list-line"></i>
+                    <span>Quotations</span>
+                </a>
+            </li>
+            <li>
+                <a href="orders.html">
+                    <i class="ri-truck-line"></i>
+                    <span>Orders</span>
+                </a>
+            </li>
+            <li>
+                <a href="users.html">
+                    <i class="ri-user-line"></i>
+                    <span>Users</span>
+                </a>
+            </li>
+            <li>
+                <a href="settings.html">
+                    <i class="ri-settings-line"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="user-welcome">
+                <span>Hey <span id="userName"></span></span>
+            </div>
+            <div class="search-bar">
+                <i class="ri-search-line"></i>
+                <input type="text" id="aiSearchInput" placeholder="Ask AI about your business...">
+            </div>
+            <div class="user-menu">
+                <span id="userEmail"></span>
+            </div>
+        </header>
+
+        <div class="content-header">
+            <div class="header-left">
+                <h1>AI Analytics Dashboard</h1>
+                <p class="header-subtitle">Powered by Gemini AI - Get intelligent insights about your business</p>
+            </div>
+            <div class="ai-status">
+                <span class="ai-indicator" id="aiStatus">
+                    <i class="ri-robot-line"></i>
+                    AI Ready
+                </span>
+                <button class="btn-secondary" onclick="tryAIGeneration()" style="margin-left: 1rem;">
+                    <i class="ri-refresh-line"></i>
+                    Try AI Generation
+                </button>
+            </div>
+        </div>
+
+        <!-- AI Chat Interface -->
+        <div class="ai-chat-section">
+            <div class="ai-chat-container">
+                <div class="ai-chat-header">
+                    <div class="ai-avatar">
+                        <i class="ri-robot-line"></i>
+                    </div>
+                    <div class="ai-info">
+                        <h3>AI Business Assistant</h3>
+                        <p>Ask me anything about your business data, trends, or get recommendations</p>
+                    </div>
+                </div>
+                <div class="ai-chat-messages" id="aiChatMessages">
+                    <div class="ai-message">
+                        <div class="message-avatar">
+                            <i class="ri-robot-line"></i>
+                        </div>
+                        <div class="message-content">
+                            <p>Hello! I'm your AI business assistant. I can help you analyze your data, identify trends, and provide actionable insights. Try asking me about your products, sales performance, or business recommendations.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="ai-chat-input">
+                    <div class="input-container">
+                        <input type="text" id="aiMessageInput" placeholder="Ask me about your business...">
+                        <button id="sendAiMessage" class="btn-primary">
+                            <i class="ri-send-plane-line"></i>
+                        </button>
+                    </div>
+                    <div class="quick-questions">
+                        <button class="quick-question" onclick="askQuickQuestion('What are my top performing products?')">
+                            Top Products
+                        </button>
+                        <button class="quick-question" onclick="askQuickQuestion('How is my business performing this month?')">
+                            Monthly Performance
+                        </button>
+                        <button class="quick-question" onclick="askQuickQuestion('What recommendations do you have for growth?')">
+                            Growth Tips
+                        </button>
+                        <button class="quick-question" onclick="askQuickQuestion('Analyze my inventory levels')">
+                            Inventory Analysis
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Business Metrics Section -->
+        <div class="metrics-section">
+            <div class="section-header">
+                <h2><i class="ri-dashboard-line"></i> Business Overview</h2>
+                <p>Key performance indicators at a glance</p>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <i class="ri-product-hunt-line"></i>
+                    </div>
+                    <div class="metric-content">
+                        <h3 id="totalProducts">0</h3>
+                        <p>Total Products</p>
+                        <span class="metric-trend positive">+12%</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <i class="ri-award-line"></i>
+                    </div>
+                    <div class="metric-content">
+                        <h3 id="totalBrands">0</h3>
+                        <p>Active Brands</p>
+                        <span class="metric-trend positive">+5%</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <i class="ri-folder-line"></i>
+                    </div>
+                    <div class="metric-content">
+                        <h3 id="totalCategories">0</h3>
+                        <p>Categories</p>
+                        <span class="metric-trend neutral">0%</span>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon">
+                        <i class="ri-star-line"></i>
+                    </div>
+                    <div class="metric-content">
+                        <h3 id="featuredItems">0</h3>
+                        <p>Featured Items</p>
+                        <span class="metric-trend positive">+8%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="section-header">
+                <h2><i class="ri-bar-chart-line"></i> Visual Analytics</h2>
+                <p>Data-driven insights through interactive charts</p>
+            </div>
+            
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Products by Category</h3>
+                        <div class="chart-controls">
+                            <button class="chart-btn active" data-chart="category">Category</button>
+                            <button class="chart-btn" data-chart="subcategory">Subcategory</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Brand Distribution</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="brandChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Pricing Analysis</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="pricingChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Stock Status</h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="stockChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Insights Cards -->
+        <div class="ai-insights-grid">
+            <div class="insight-card">
+                <div class="insight-header">
+                    <i class="ri-trending-up-line"></i>
+                    <h3>Sales Trends</h3>
+                </div>
+                <div class="insight-content" id="salesTrendsInsight">
+                    <div class="loading-spinner">
+                        <i class="ri-loader-4-line"></i>
+                        <p>Analyzing sales data...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="insight-card">
+                <div class="insight-header">
+                    <i class="ri-shopping-bag-line"></i>
+                    <h3>Product Performance</h3>
+                </div>
+                <div class="insight-content" id="productPerformanceInsight">
+                    <div class="loading-spinner">
+                        <i class="ri-loader-4-line"></i>
+                        <p>Analyzing product data...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="insight-card">
+                <div class="insight-header">
+                    <i class="ri-bookmark-line"></i>
+                    <h3>Brand Analysis</h3>
+                </div>
+                <div class="insight-content" id="brandAnalysisInsight">
+                    <div class="loading-spinner">
+                        <i class="ri-loader-4-line"></i>
+                        <p>Analyzing brand data...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="insight-card">
+                <div class="insight-header">
+                    <i class="ri-lightbulb-line"></i>
+                    <h3>Growth Opportunities</h3>
+                </div>
+                <div class="insight-content" id="growthOpportunitiesInsight">
+                    <div class="loading-spinner">
+                        <i class="ri-loader-4-line"></i>
+                        <p>Identifying opportunities...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Generated Reports -->
+        <div class="ai-reports-section">
+            <div class="section-header">
+                <h2>AI Generated Reports</h2>
+                <button class="btn-primary" onclick="generateAIMonthlyReport()">
+                    <i class="ri-file-chart-line"></i>
+                    Generate Monthly Report
+                </button>
+            </div>
+            <div class="reports-grid" id="aiReportsGrid">
+                <div class="report-card">
+                    <div class="report-header">
+                        <i class="ri-calendar-line"></i>
+                        <h3>Monthly Business Summary</h3>
+                        <span class="report-date">Last Generated: Never</span>
+                    </div>
+                    <div class="report-content">
+                        <p>Generate your first AI-powered monthly report to get comprehensive insights about your business performance.</p>
+                        <button class="btn-secondary" onclick="generateAIMonthlyReport()">
+                            Generate Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Recommendations -->
+        <div class="ai-recommendations-section">
+            <div class="section-header">
+                <h2>AI Recommendations</h2>
+                <button class="btn-secondary" onclick="refreshRecommendations()">
+                    <i class="ri-refresh-line"></i>
+                    Refresh
+                </button>
+            </div>
+            <div class="recommendations-list" id="aiRecommendations">
+                <div class="recommendation-item">
+                    <div class="recommendation-icon">
+                        <i class="ri-lightbulb-line"></i>
+                    </div>
+                    <div class="recommendation-content">
+                        <h4>Optimize Product Categories</h4>
+                        <p>Consider expanding your top-performing categories to increase revenue potential.</p>
+                        <span class="recommendation-priority high">High Priority</span>
+                    </div>
+                </div>
+                <div class="recommendation-item">
+                    <div class="recommendation-icon">
+                        <i class="ri-trending-up-line"></i>
+                    </div>
+                    <div class="recommendation-content">
+                        <h4>Inventory Management</h4>
+                        <p>Review stock levels for fast-moving products to avoid stockouts.</p>
+                        <span class="recommendation-priority medium">Medium Priority</span>
+                    </div>
+                </div>
+                <div class="recommendation-item">
+                    <div class="recommendation-icon">
+                        <i class="ri-star-line"></i>
+                    </div>
+                    <div class="recommendation-content">
+                        <h4>Featured Products</h4>
+                        <p>Update your featured products section with trending items.</p>
+                        <span class="recommendation-priority low">Low Priority</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/sidebar.js"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../js/ai-analytics.js"></script>
+</body>
+</html>

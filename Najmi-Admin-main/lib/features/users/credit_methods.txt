@@ -1,0 +1,212 @@
+// Add these methods to UsersScreen class (before the closing brace of class UsersScreen)
+
+  Widget _buildCreditCell(BuildContext context, WidgetRef ref, AdminUser user) {
+    if (user.creditLimit == null) {
+      return TextButton.icon(
+        onPressed: () => _showEditCreditDialog(context, ref, user),
+        icon: const Icon(Icons.add_circle_outline, size: 16),
+        label: const Text('Add Credit', style: TextStyle(fontSize: 12)),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Limit: ₹${NumberFormat('#,##,###').format(user.creditLimit)}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Available: ₹${NumberFormat('#,##,###').format(user.availableCredit ?? 0)}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.green[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit, size: 16),
+              onPressed: () => _showEditCreditDialog(context, ref, user),
+              tooltip: 'Edit Credit',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showEditCreditDialog(BuildContext context, WidgetRef ref, AdminUser user) {
+    final creditLimitController = TextEditingController(
+      text: user.creditLimit?.toStringAsFixed(0) ?? '500000',
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit Credit - ${user.name}'),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                user.companyName ?? user.email,
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              if (user.creditLimit != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Current Limit:'),
+                          Text(
+                            '₹${NumberFormat('#,##,###').format(user.creditLimit)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Available:'),
+                          Text(
+                            '₹${NumberFormat('#,##,###').format(user.availableCredit ?? 0)}',
+                            style: TextStyle(color: Colors.green[700]),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Used:'),
+                          Text(
+                            '₹${NumberFormat('#,##,###').format(user.usedCredit ?? 0)}',
+                            style: TextStyle(color: Colors.orange[700]),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              TextField(
+                controller: creditLimitController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'New Credit Limit',
+                  hintText: 'Enter amount (e.g., 500000)',
+                  prefixText: '₹ ',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'This will update the credit limit for this business user.',
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newLimit = double.tryParse(creditLimitController.text);
+              if (newLimit == null || newLimit < 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter a valid amount')),
+                );
+                return;
+              }
+
+              try {
+                final supabase = ref.read(supabaseProvider);
+                
+                // Check if credit account exists
+                final existing = await supabase
+                    .from('business_credit_accounts')
+                    .select('id')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+
+                if (existing == null) {
+                  // Create new credit account
+                  await supabase.from('business_credit_accounts').insert({
+                    'user_id': user.id,
+                    'credit_limit': newLimit,
+                    'available_credit': newLimit,
+                    'used_credit': 0,
+                    'kyc_status': 'approved',
+                    'status': 'active',
+                  });
+                } else {
+                  // Update existing
+                  final currentUsed = user.usedCredit ?? 0;
+                  final newAvailable = newLimit - currentUsed;
+                  
+                  await supabase
+                      .from('business_credit_accounts')
+                      .update({
+                        'credit_limit': newLimit,
+                        'available_credit': newAvailable,
+                      })
+                      .eq('user_id', user.id);
+                }
+
+                // Refresh users list
+                ref.invalidate(usersProvider);
+                
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Credit limit updated successfully'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
