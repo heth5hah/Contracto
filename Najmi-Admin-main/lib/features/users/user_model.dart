@@ -25,6 +25,9 @@ class AdminUser {
   final String? companyPhone;
   final String? pocName;
   final String? pocPhone;
+  final String? gstNumber;
+  final String? panNumber;
+  final bool isGstRegistered;
 
   AdminUser({
     required this.id,
@@ -48,6 +51,9 @@ class AdminUser {
     this.companyPhone,
     this.pocName,
     this.pocPhone,
+    this.gstNumber,
+    this.panNumber,
+    this.isGstRegistered = false,
   });
 
   factory AdminUser.fromJson(Map<String, dynamic> json) {
@@ -55,7 +61,8 @@ class AdminUser {
     final companyName = json['company_name']?.toString();
     final isBusiness = userType == 'business' || 
                       userType == 'company' || 
-                      (companyName != null && companyName.trim().isNotEmpty);
+                      (companyName != null && companyName.trim().isNotEmpty) ||
+                      json['is_business'] == true;
     
     // Parse credit data from joined business_credit_accounts
     final creditData = json['business_credit_accounts'];
@@ -106,6 +113,9 @@ class AdminUser {
       companyPhone: json['company_phone']?.toString(),
       pocName: json['poc_name']?.toString(),
       pocPhone: json['poc_phone']?.toString(),
+      gstNumber: json['gst_number']?.toString(),
+      panNumber: json['pan_number']?.toString() ?? json['pan']?.toString(),
+      isGstRegistered: json['is_gst_registered'] ?? false,
     );
   }
 

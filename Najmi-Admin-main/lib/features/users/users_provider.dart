@@ -137,62 +137,55 @@ final usersProvider = FutureProvider<List<AdminUser>>((ref) async {
         print('User Keys: ${responseList.first.keys.toList()}');
       }
       
+      // Pre-fetch all business credit accounts to avoid N+1 queries
+      final Map<String, Map<String, dynamic>> creditAccountsMap = {};
+      try {
+        final creditAccountsRes = await supabase
+            .from('business_credit_accounts')
+            .select('user_id, credit_limit, available_credit, used_credit, kyc_status, status');
+        if (creditAccountsRes != null && creditAccountsRes is List) {
+          for (var account in creditAccountsRes) {
+            final userId = account['user_id']?.toString();
+            if (userId != null) {
+              creditAccountsMap[userId] = Map<String, dynamic>.from(account);
+            }
+          }
+        }
+      } catch (e) {
+        print('Error pre-fetching business credit accounts: $e');
+      }
+
+      // Pre-fetch all orders to calculate counts and total spent
+      final Map<String, List<double>> userOrdersMap = {};
+      try {
+        final ordersRes = await supabase
+            .from('orders')
+            .select('user_id, total_amount');
+        if (ordersRes != null && ordersRes is List) {
+          for (var order in ordersRes) {
+            final userId = order['user_id']?.toString();
+            final amount = (order['total_amount'] as num?)?.toDouble() ?? 0.0;
+            if (userId != null) {
+              userOrdersMap.putIfAbsent(userId, () => []).add(amount);
+            }
+          }
+        }
+      } catch (e) {
+        print('Error pre-fetching orders: $e');
+      }
+
       final users = <AdminUser>[];
       
       for (var userJson in responseList) {
         try {
-          print('Processing user: ${userJson['id']} - ${userJson['email']}');
+          final userId = userJson['id']?.toString();
+          if (userId == null) continue;
           
-          // Debug: Print credit data
-          if (userJson['business_credit_accounts'] != null) {
-            print('  Credit data found: ${userJson['business_credit_accounts']}');
-          } else {
-            print('  No credit data');
-          }
+          final userOrders = userOrdersMap[userId] ?? [];
+          final ordersCount = userOrders.length;
+          final totalSpent = userOrders.fold<double>(0.0, (sum, amt) => sum + amt);
           
-          // Calculate orders count and total spent
-          int ordersCount = 0;
-          double totalSpent = 0.0;
-          
-          try {
-            // Try to get orders count from orders table
-            final ordersResponse = await supabase
-                .from('orders')
-                .select('id, total_amount')
-                .eq('user_id', userJson['id']);
-            
-            if (ordersResponse != null && ordersResponse is List) {
-              ordersCount = ordersResponse.length;
-              totalSpent = ordersResponse
-                  .map((o) => (o['total_amount'] as num?)?.toDouble() ?? 0.0)
-                  .fold(0.0, (sum, amount) => sum + amount);
-            }
-          } catch (e) {
-            // If orders table doesn't exist or query fails, use defaults
-            print('Error fetching orders for user ${userJson['id']}: $e');
-          }
-          
-          // Fetch credit data for business users
-          Map<String, dynamic>? creditData;
-          if (userJson['user_type'] == 'company' || 
-              (userJson['company_name'] != null && userJson['company_name'].toString().trim().isNotEmpty)) {
-            try {
-              final creditResponse = await supabase
-                  .from('business_credit_accounts')
-                  .select('credit_limit, available_credit, used_credit, kyc_status, status')
-                  .eq('user_id', userJson['id'])
-                  .maybeSingle();
-              
-              if (creditResponse != null) {
-                creditData = creditResponse;
-                print('  Credit data found: $creditData');
-              } else {
-                print('  No credit account for business user');
-              }
-            } catch (e) {
-              print('  Error fetching credit data: $e');
-            }
-          }
+          final creditData = creditAccountsMap[userId];
           
           // Create user with calculated values and credit data
           final user = AdminUser.fromJson({

@@ -38,7 +38,7 @@ class _BusinessCreditWidgetV2State extends State<BusinessCreditWidgetV2> {
   @override
   void initState() {
     super.initState();
-    _loadCreditData();
+    _loadCreditData(forceSync: true);
     _setupRealtimeListener();
   }
 
@@ -55,20 +55,20 @@ class _BusinessCreditWidgetV2State extends State<BusinessCreditWidgetV2> {
 
     _creditSubscription = realtimeService.creditAccountUpdatedStream.listen((_) {
       print('🔄 BusinessCreditWidgetV2: Credit Account updated in real-time. Reloading...');
-      _loadCreditData();
+      _loadCreditData(forceSync: false);
     });
 
     _orderSubscription = realtimeService.orderStatusUpdatedStream.listen((_) {
       print('🔄 BusinessCreditWidgetV2: Order updated in real-time. Reloading...');
-      _loadCreditData();
+      _loadCreditData(forceSync: false);
     });
   }
 
-  Future<void> _loadCreditData() async {
+  Future<void> _loadCreditData({bool forceSync = false}) async {
     try {
       setState(() => _isLoading = true);
 
-      print('BusinessCreditWidget: Loading credit data...');
+      print('BusinessCreditWidget: Loading credit data (forceSync: $forceSync)...');
 
       // Get company name and user type first
       final userData = await _userService.getCurrentUserData();
@@ -108,24 +108,26 @@ class _BusinessCreditWidgetV2State extends State<BusinessCreditWidgetV2> {
       final hasSubmittedKYC = (companyAddress != null && companyAddress.trim().isNotEmpty) &&
           (companyPhone != null && companyPhone.trim().isNotEmpty);
 
+      final creditLimit = await _creditService.getCreditLimit();
       var accountStatus = (creditAccount['status'] as String?) ?? 'active';
-      if (accountStatus == 'pending' && !hasSubmittedKYC) {
+      if (accountStatus == 'pending' && !hasSubmittedKYC && creditLimit == 0.0) {
         accountStatus = 'not_applied';
       }
 
       print('BusinessCreditWidget: Credit account found: ${creditAccount['id']}, Status: $accountStatus');
 
-      // Ensure structural integrity of balances and backfills
-      try {
-        await _creditService.backfillReturnCredits();
-        await _creditService.hardResetTrueBalances();
-      } catch (e) {
-        print('BusinessCreditWidget true balance calculation warning: $e');
+      // Ensure structural integrity of balances and backfills only on forceSync
+      if (forceSync) {
+        try {
+          await _creditService.backfillReturnCredits();
+          await _creditService.hardResetTrueBalances();
+        } catch (e) {
+          print('BusinessCreditWidget true balance calculation warning: $e');
+        }
       }
 
       // Get outstanding amount, credit limit, and due date
       final outstandingAmount = await _creditService.getOutstandingAmount();
-      final creditLimit = await _creditService.getCreditLimit();
       final nextDueDate = await _creditService.getNextDueDate();
       final waitingDays = await _creditService.getWaitingDays();
 
@@ -205,8 +207,10 @@ class _BusinessCreditWidgetV2State extends State<BusinessCreditWidgetV2> {
       );
     }
 
-    if (!_isIndividual && _accountStatus == 'not_applied') {
-      return _buildApplyForCreditCard();
+    if (!_isIndividual && _creditLimit == 0.0 && _availableCredit == 0.0) {
+      if (_accountStatus == 'not_applied') {
+        return _buildApplyForCreditCard();
+      }
     }
 
     // Don't show if no credit account or (credit limit is 0 AND available credit is 0 AND not pending)
@@ -216,7 +220,7 @@ class _BusinessCreditWidgetV2State extends State<BusinessCreditWidgetV2> {
     }
 
     // Show "Awaiting Approval" card for pending accounts
-    if (_accountStatus == 'pending') {
+    if (_accountStatus == 'pending' && _creditLimit == 0.0 && _availableCredit == 0.0) {
       return _buildPendingApprovalCard();
     }
 
@@ -445,7 +449,7 @@ class _BusinessCreditWidgetV2State extends State<BusinessCreditWidgetV2> {
                         if (result == true) {
                           // Cancel reminders and refresh credit data after successful payment
                           await CreditNotificationService().cancelReminders();
-                          _loadCreditData();
+                          _loadCreditData(forceSync: true);
                         }
                       },
                       child: Container(

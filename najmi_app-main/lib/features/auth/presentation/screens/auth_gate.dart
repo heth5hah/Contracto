@@ -15,6 +15,9 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   late final StreamSubscription<AuthState> _authSubscription;
+  Session? _currentSession;
+  bool _isLoading = true;
+  bool _isBlocked = false;
 
   @override
   void initState() {
@@ -35,8 +38,18 @@ class _AuthGateState extends State<AuthGate> {
       });
     }
 
+    // Get initial session and check block status if authenticated
+    _currentSession = SupabaseService.auth.currentSession;
+    if (_currentSession != null) {
+      _checkBlockStatus(_currentSession!.user.id);
+    } else {
+      _isLoading = false;
+    }
+
     _authSubscription = SupabaseService.auth.onAuthStateChange.listen((data) {
       final event = data.event;
+      final session = data.session;
+
       if (event == AuthChangeEvent.passwordRecovery) {
         debugPrint('🔑 Password recovery event detected! Redirecting to UpdatePasswordScreen...');
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -49,7 +62,62 @@ class _AuthGateState extends State<AuthGate> {
           }
         });
       }
+
+      _handleAuthStateChange(session);
     });
+  }
+
+  void _handleAuthStateChange(Session? session) {
+    if (session == null) {
+      if (mounted) {
+        setState(() {
+          _currentSession = null;
+          _isBlocked = false;
+          _isLoading = false;
+        });
+      }
+    } else {
+      // If user changed or we didn't have a session, query the database.
+      // Otherwise, just update the session reference without triggering a database check.
+      final bool userChanged = _currentSession?.user.id != session.user.id;
+      if (userChanged) {
+        _checkBlockStatus(session.user.id);
+      }
+      
+      if (mounted) {
+        setState(() {
+          _currentSession = session;
+          if (!userChanged) {
+            _isLoading = false;
+          }
+        });
+      }
+    }
+  }
+
+  Future<void> _checkBlockStatus(String userId) async {
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
+    try {
+      final isBlocked = await SupabaseService().isUserBlocked(userId);
+      if (mounted) {
+        setState(() {
+          _isBlocked = isBlocked;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error checking block status in AuthGate: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -57,37 +125,23 @@ class _AuthGateState extends State<AuthGate> {
     _authSubscription.cancel();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<AuthState>(
-      stream: SupabaseService.auth.onAuthStateChange,
-      builder: (context, snapshot) {
-        final session = snapshot.data?.session ?? SupabaseService.auth.currentSession;
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-        if (session != null) {
-          // Check if user is blocked or deleted in the database
-          return FutureBuilder<bool>(
-            future: SupabaseService().isUserBlocked(session.user.id),
-            builder: (context, statusSnapshot) {
-              if (statusSnapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
-              }
-
-              if (statusSnapshot.data == true) {
-                // User is blocked or deleted
-                return const BlockedUserScreen();
-              }
-
-              return const MainNavigation();
-            },
-          );
-        } else {
-          return const WelcomeScreen();
-        }
-      },
-    );
+    if (_currentSession != null) {
+      if (_isBlocked) {
+        return const BlockedUserScreen();
+      }
+      return const MainNavigation();
+    } else {
+      return const WelcomeScreen();
+    }
   }
 }
 

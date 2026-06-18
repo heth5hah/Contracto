@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../main.dart';
+import '../categories/categories_provider.dart';
+import '../categories/category_model.dart';
 
 class AddProductDialog extends ConsumerStatefulWidget {
   final String brandId;
@@ -57,6 +59,8 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final categoriesAsync = ref.watch(categoriesProvider);
+
     return AlertDialog(
       title: Text(widget.product == null ? 'Add Product' : 'Edit Product'),
       content: SizedBox(
@@ -82,11 +86,58 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                   },
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _categoryController,
-                  decoration: const InputDecoration(
-                    labelText: 'Category',
-                    border: OutlineInputBorder(),
+                categoriesAsync.when(
+                  data: (categories) {
+                    // Filter duplicates and prepare names
+                    final categoryNames = categories.map((c) => c.name).toSet().toList();
+                    categoryNames.sort();
+
+                    // Safety check: ensure current category is in list, if not add it
+                    String? selectedCategory;
+                    if (_categoryController.text.isNotEmpty) {
+                      try {
+                        selectedCategory = categoryNames.firstWhere(
+                          (name) => name.toLowerCase().trim() == _categoryController.text.toLowerCase().trim(),
+                        );
+                      } catch (_) {
+                        selectedCategory = _categoryController.text.trim();
+                        categoryNames.add(selectedCategory);
+                      }
+                    }
+
+                    return DropdownButtonFormField<String>(
+                      value: selectedCategory,
+                      decoration: const InputDecoration(
+                        labelText: 'Category',
+                        border: OutlineInputBorder(),
+                      ),
+                      hint: const Text('Select category...'),
+                      items: categoryNames.map((name) => DropdownMenuItem(
+                        value: name,
+                        child: Text(name),
+                      )).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _categoryController.text = value;
+                          });
+                        }
+                      },
+                    );
+                  },
+                  loading: () => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                  error: (e, _) => TextFormField(
+                    controller: _categoryController,
+                    decoration: InputDecoration(
+                      labelText: 'Category',
+                      border: const OutlineInputBorder(),
+                      helperText: 'Failed to load categories: $e',
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),

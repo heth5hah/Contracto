@@ -590,11 +590,7 @@ class _UserDetailsScreenState extends ConsumerState<UserDetailsScreen> with Sing
           ],
           
           // Business Credit KYC Details
-          if (widget.user.isBusiness && 
-              (widget.user.companyAddress != null || 
-               widget.user.companyPhone != null || 
-               widget.user.pocName != null || 
-               widget.user.pocPhone != null)) ...[
+          if (widget.user.isBusiness) ...[
             Divider(height: 1, color: Colors.grey[200]),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -606,7 +602,7 @@ class _UserDetailsScreenState extends ConsumerState<UserDetailsScreen> with Sing
                       const Icon(Icons.verified_user_outlined, size: 18, color: Color(0xFF8B5CF6)),
                       const SizedBox(width: 8),
                       Text(
-                        'Business Credit Application Details',
+                        'Business Registration & KYC Details',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -618,6 +614,11 @@ class _UserDetailsScreenState extends ConsumerState<UserDetailsScreen> with Sing
                   const SizedBox(height: 12),
                   if (widget.user.companyName != null && widget.user.companyName!.isNotEmpty)
                     _buildInfoRow('Company Name', widget.user.companyName!),
+                  if (widget.user.gstNumber != null && widget.user.gstNumber!.isNotEmpty)
+                    _buildInfoRow('GST Number', widget.user.gstNumber!),
+                  _buildInfoRow('GST Registered', widget.user.isGstRegistered ? 'Yes' : 'No'),
+                  if (widget.user.panNumber != null && widget.user.panNumber!.isNotEmpty)
+                    _buildInfoRow('PAN Number', widget.user.panNumber!),
                   if (widget.user.companyAddress != null && widget.user.companyAddress!.isNotEmpty)
                     _buildInfoRow('Company Address', widget.user.companyAddress!),
                   if (widget.user.companyPhone != null && widget.user.companyPhone!.isNotEmpty)

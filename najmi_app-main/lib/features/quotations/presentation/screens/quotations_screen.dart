@@ -1437,13 +1437,6 @@ class _QuotationsScreenState extends State<QuotationsScreen>
   }) async {
     if (!mounted) return;
 
-    final txnId = await _showTransactionIdDialog(
-      referenceId: quoteRequestId,
-      isCreditPayment: false,
-    );
-    if (txnId == null) return;
-
-    if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1474,9 +1467,9 @@ class _QuotationsScreenState extends State<QuotationsScreen>
       // 1. Update status and DB with selected items
       await _finalizeQuoteSelection(quote['id'], selectedItems);
       await SupabaseService.client.from('quote_requests').update({
-        'status': 'quotation_accepted',
+        'status': 'payment_details_sent',
         'payment_method': 'bank_transfer',
-        'transaction_id': txnId,
+        'transaction_id': null,
       }).eq('id', quoteRequestId);
 
       // 2. Send bill email with only the selected items
@@ -1560,14 +1553,7 @@ class _QuotationsScreenState extends State<QuotationsScreen>
     List<Map<String, dynamic>>? selectedItems,
   }) async {
     if (!mounted) return;
-    
-    final txnId = await _showTransactionIdDialog(
-      referenceId: quoteRequestId,
-      isCreditPayment: false,
-    );
-    if (txnId == null) return;
-    
-    if (!mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -1655,9 +1641,9 @@ class _QuotationsScreenState extends State<QuotationsScreen>
       // 2. Finalize quote selection and update status
       await _finalizeQuoteSelection(quote['id'], selectedItems);
       await SupabaseService.client.from('quote_requests').update({
-        'status': 'quotation_accepted',
+        'status': 'payment_details_sent',
         'payment_method': 'wallet_plus_bank',
-        'transaction_id': txnId
+        'transaction_id': null,
       }).eq('id', quoteRequestId);
 
       // 3. Send bill email for remaining amount

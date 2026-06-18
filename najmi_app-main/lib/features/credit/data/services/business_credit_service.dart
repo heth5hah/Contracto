@@ -589,7 +589,7 @@ class BusinessCreditService {
       // Check if they have refunds to backfill (both 'refund_completed' and 'completed' statuses)
       final completedReturns = await SupabaseService.client
           .from('returns')
-          .select('id, order_id, user_id, return_status, refund_amount, refund_amount_final, orders(total_amount)')
+          .select('id, order_id, user_id, return_status, refund_amount, refund_amount_final, orders(total_amount, payment_source, order_status)')
           .eq('user_id', userId)
           .inFilter('return_status', ['refund_completed', 'completed']);
 
@@ -711,6 +711,13 @@ class BusinessCreditService {
         final orderId = ret['order_id'] as String?;
         if (orderId == null) continue;
 
+        final ordersData = ret['orders'] as Map<String, dynamic>?;
+        final paymentSource = ordersData != null ? ordersData['payment_source'] as String? : null;
+        if (paymentSource != 'credit') {
+          // Skip bank-paid or other payment methods in backfill (only credit-paid needs credit restoration)
+          continue;
+        }
+
         final shortId =
             orderId.replaceAll('-', '').substring(0, 8).toUpperCase();
 
@@ -720,14 +727,17 @@ class BusinessCreditService {
         final refundAmount =
             (ret['refund_amount_final'] as num?)?.toDouble() ??
             (ret['refund_amount'] as num?)?.toDouble() ??
-            (ret['orders']?['total_amount'] as num?)?.toDouble() ??
+            (ordersData?['total_amount'] as num?)?.toDouble() ??
             0.0;
         if (refundAmount <= 0) continue;
 
-        // Ensure order is actually marked as returned
-        await SupabaseService.client
-            .from('orders')
-            .update({'order_status': 'returned'}).eq('id', orderId);
+        // Ensure order is actually marked as returned in DB if not already
+        final currentOrderStatus = ordersData?['order_status'] as String?;
+        if (currentOrderStatus != 'returned') {
+          await SupabaseService.client
+              .from('orders')
+              .update({'order_status': 'returned'}).eq('id', orderId);
+        }
 
         await restoreCreditForReturn(
           orderId: orderId,

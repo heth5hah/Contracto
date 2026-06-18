@@ -43,6 +43,7 @@ class _BusinessCreditMainScreenState extends State<BusinessCreditMainScreen>
   bool _hasCreditAccount = false;
   String? _kycStatus;
   String? _creditAccountStatus;
+  double _creditLimit = 0.0;
 
   // KYC Application controllers
   final _formKey = GlobalKey<FormState>();
@@ -64,7 +65,7 @@ class _BusinessCreditMainScreenState extends State<BusinessCreditMainScreen>
       vsync: this,
       initialIndex: widget.initialTab,
     );
-    _loadCreditData();
+    _loadCreditData(forceSync: true);
     _setupRealtimeListener();
   }
 
@@ -87,46 +88,51 @@ class _BusinessCreditMainScreenState extends State<BusinessCreditMainScreen>
 
     _creditSubscription = realtimeService.creditAccountUpdatedStream.listen((_) {
       print('🔄 BusinessCreditMainScreen: Credit Account updated in real-time. Reloading...');
-      _loadCreditData();
+      _loadCreditData(forceSync: false);
     });
 
     _orderSubscription = realtimeService.orderStatusUpdatedStream.listen((_) {
       print('🔄 BusinessCreditMainScreen: Order updated in real-time. Reloading...');
-      _loadCreditData();
+      _loadCreditData(forceSync: false);
     });
   }
 
-  Future<void> _loadCreditData() async {
+  Future<void> _loadCreditData({bool forceSync = false}) async {
     try {
       setState(() => _isLoading = true);
 
-      // Auto-restore credit for any returned orders that were missed
-      try {
-        final count = await _creditService.backfillReturnCredits();
-        await _creditService
-            .hardResetTrueBalances(); // Always lock in true math constraints
-        if (count > 0) {
+      // Auto-restore credit for any returned orders that were missed only on forceSync
+      if (forceSync) {
+        try {
+          final count = await _creditService.backfillReturnCredits();
+          await _creditService
+              .hardResetTrueBalances(); // Always lock in true math constraints
+          if (count > 0) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text(
+                        'Backfilled $count return credits missed. Reset page to view.')),
+              );
+            });
+          }
+        } catch (e) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(
-                      'Backfilled $count return credits missed. Reset page to view.')),
-            );
+            showDialog(
+                context: context,
+                builder: (_) =>
+                    AlertDialog(content: Text('Backfill Database Error: $e')));
           });
         }
-      } catch (e) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          showDialog(
-              context: context,
-              builder: (_) =>
-                  AlertDialog(content: Text('Backfill Database Error: $e')));
-        });
       }
 
       final creditAccount = await _creditService.getCreditAccount();
       final hasCreditAccount = creditAccount != null;
       final kycStatus = creditAccount?['kyc_status'] as String?;
       final creditAccountStatus = creditAccount?['status'] as String?;
+      final creditLimit = creditAccount != null
+          ? (creditAccount['credit_limit'] ?? 0.0).toDouble()
+          : 0.0;
 
       final outstandingAmount = await _creditService.getOutstandingAmount();
 
@@ -340,6 +346,7 @@ class _BusinessCreditMainScreenState extends State<BusinessCreditMainScreen>
           _outstandingAmount = outstandingAmount;
           _availableCredit = availableCredit;
           _usedCredit = usedCredit;
+          _creditLimit = creditLimit;
           _nextDueDate = nextDueDate;
           _companyName = companyName;
           _isIndividual = isIndividual;
@@ -370,7 +377,7 @@ class _BusinessCreditMainScreenState extends State<BusinessCreditMainScreen>
     );
 
     if (result == true) {
-      await _loadCreditData();
+      await _loadCreditData(forceSync: true);
     }
   }
 
@@ -388,22 +395,8 @@ class _BusinessCreditMainScreenState extends State<BusinessCreditMainScreen>
     }
 
     if (!_isIndividual) {
-      if (!_hasCreditAccount) {
-        return Scaffold(
-          backgroundColor: const Color(0xFFF1F5F9),
-          appBar: AppBar(
-            title: const Text('Apply for Business Credit'),
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            elevation: 0,
-          ),
-          body: _buildKYCForm(),
-        );
-      } else if (_kycStatus == 'pending' || _creditAccountStatus == 'pending') {
-        final hasSubmittedKYC = _companyAddressController.text.trim().isNotEmpty &&
-            _companyPhoneController.text.trim().isNotEmpty;
-            
-        if (!hasSubmittedKYC) {
+      if (_creditLimit == 0.0 && _availableCredit == 0.0) {
+        if (!_hasCreditAccount) {
           return Scaffold(
             backgroundColor: const Color(0xFFF1F5F9),
             appBar: AppBar(
@@ -414,29 +407,59 @@ class _BusinessCreditMainScreenState extends State<BusinessCreditMainScreen>
             ),
             body: _buildKYCForm(),
           );
+        } else if (_kycStatus == 'pending' || _creditAccountStatus == 'pending') {
+          final hasSubmittedKYC = _companyAddressController.text.trim().isNotEmpty &&
+              _companyPhoneController.text.trim().isNotEmpty;
+              
+          if (!hasSubmittedKYC) {
+            return Scaffold(
+              backgroundColor: const Color(0xFFF1F5F9),
+              appBar: AppBar(
+                title: const Text('Apply for Business Credit'),
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                elevation: 0,
+              ),
+              body: _buildKYCForm(),
+            );
+          }
+          
+          return Scaffold(
+            backgroundColor: const Color(0xFFF1F5F9),
+            appBar: AppBar(
+              title: const Text('Credit Line Pending'),
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              elevation: 0,
+            ),
+            body: _buildPendingReviewView(),
+          );
+        } else if (_creditAccountStatus == 'inactive') {
+          return Scaffold(
+            backgroundColor: const Color(0xFFF1F5F9),
+            appBar: AppBar(
+              title: const Text('Credit Line Suspended'),
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              elevation: 0,
+            ),
+            body: _buildSuspendedView(),
+          );
         }
-        
-        return Scaffold(
-          backgroundColor: const Color(0xFFF1F5F9),
-          appBar: AppBar(
-            title: const Text('Credit Line Pending'),
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            elevation: 0,
-          ),
-          body: _buildPendingReviewView(),
-        );
-      } else if (_creditAccountStatus == 'inactive') {
-        return Scaffold(
-          backgroundColor: const Color(0xFFF1F5F9),
-          appBar: AppBar(
-            title: const Text('Credit Line Suspended'),
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            elevation: 0,
-          ),
-          body: _buildSuspendedView(),
-        );
+      } else {
+        // Even if limit > 0, if it is explicitly suspended/inactive, show suspended screen
+        if (_creditAccountStatus == 'inactive') {
+          return Scaffold(
+            backgroundColor: const Color(0xFFF1F5F9),
+            appBar: AppBar(
+              title: const Text('Credit Line Suspended'),
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              elevation: 0,
+            ),
+            body: _buildSuspendedView(),
+          );
+        }
       }
     }
 

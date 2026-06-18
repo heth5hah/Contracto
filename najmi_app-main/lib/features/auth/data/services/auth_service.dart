@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:contracto_app/core/config/app_config.dart';
 import 'package:contracto_app/core/network/supabase_service.dart';
 import 'package:contracto_app/features/auth/data/models/user_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -434,9 +436,13 @@ class AuthService {
   /// Reset password
   Future<bool> resetPassword(String email) async {
     try {
+      final String redirectTo = kDebugMode
+          ? 'http://localhost:8000/auth/reset-password'
+          : '${AppConfig.websiteUrl}/auth/reset-password';
+
       await SupabaseService.client.auth.resetPasswordForEmail(
         email,
-        redirectTo: 'http://localhost:3000/reset-password.html',
+        redirectTo: redirectTo,
       );
       return true;
     } catch (e) {

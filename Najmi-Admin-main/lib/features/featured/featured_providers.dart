@@ -42,6 +42,7 @@ class ImageSlide {
   final String? description;
   final String imageUrl;
   final String? linkUrl;
+  final String? brandId;
   final int sortOrder;
   final bool isActive;
 
@@ -51,6 +52,7 @@ class ImageSlide {
     this.description,
     required this.imageUrl,
     this.linkUrl,
+    this.brandId,
     required this.sortOrder,
     required this.isActive,
   });
@@ -62,6 +64,7 @@ class ImageSlide {
       description: json['description'] as String?,
       imageUrl: json['image_url'] as String,
       linkUrl: json['link_url'] as String?,
+      brandId: json['brand_id'] as String?,
       sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       isActive: json['is_active'] as bool? ?? true,
     );
@@ -262,6 +265,7 @@ class ImageSlidesNotifier extends AsyncNotifier<List<ImageSlide>> {
     String? description,
     required String imageUrl,
     String? linkUrl,
+    String? brandId,
     int sortOrder = 0,
     bool isActive = true,
   }) async {
@@ -272,6 +276,7 @@ class ImageSlidesNotifier extends AsyncNotifier<List<ImageSlide>> {
       'description': description,
       'image_url': imageUrl,
       'link_url': linkUrl,
+      'brand_id': brandId,
       'sort_order': sortOrder,
       'is_active': isActive,
     });
@@ -284,15 +289,18 @@ class ImageSlidesNotifier extends AsyncNotifier<List<ImageSlide>> {
       String? description,
       String? imageUrl,
       String? linkUrl,
+      String? brandId,
+      bool updateBrandId = false,
       int? sortOrder,
       bool? isActive}) async {
     final supabase = ref.read(supabaseProvider);
 
     final update = <String, dynamic>{};
-    if (title != null) update['title'] = title;
-    if (description != null) update['description'] = description;
+    if (title != null) update['title'] = title.trim().isEmpty ? null : title.trim();
+    if (description != null) update['description'] = description.trim().isEmpty ? null : description.trim();
     if (imageUrl != null) update['image_url'] = imageUrl;
-    if (linkUrl != null) update['link_url'] = linkUrl;
+    if (linkUrl != null) update['link_url'] = linkUrl.trim().isEmpty ? null : linkUrl.trim();
+    if (updateBrandId) update['brand_id'] = brandId;
     if (sortOrder != null) update['sort_order'] = sortOrder;
     if (isActive != null) update['is_active'] = isActive;
     if (update.isEmpty) return;

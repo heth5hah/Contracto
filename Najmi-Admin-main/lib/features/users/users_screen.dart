@@ -149,9 +149,11 @@ class UsersScreen extends ConsumerWidget {
                 final name = (u.name ?? '').toLowerCase();
                 final email = u.email.toLowerCase();
                 final company = (u.companyName ?? '').toLowerCase();
+                final gst = (u.gstNumber ?? '').toLowerCase();
                 return name.contains(searchQuery) ||
                     email.contains(searchQuery) ||
-                    company.contains(searchQuery);
+                    company.contains(searchQuery) ||
+                    gst.contains(searchQuery);
               }).toList();
             }
 
@@ -380,6 +382,15 @@ class UsersScreen extends ConsumerWidget {
                                               style: TextStyle(
                                                   color: Colors.grey[600],
                                                   fontSize: 12),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          if (isBusiness && user.gstNumber != null && user.gstNumber!.isNotEmpty)
+                                            Text(
+                                              'GST: ${user.gstNumber}',
+                                              style: const TextStyle(
+                                                  color: Color(0xFF4F46E5),
+                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 11),
                                               overflow: TextOverflow.ellipsis,
                                             ),
                                           Text(

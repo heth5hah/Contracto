@@ -367,6 +367,8 @@ class _ImageSlidesTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final brandsAsync = ref.watch(brandsNotifierProvider);
+
     return imageSlidesAsync.when(
       data: (slides) {
         if (slides.isEmpty) {
@@ -381,6 +383,17 @@ class _ImageSlidesTab extends ConsumerWidget {
           separatorBuilder: (context, index) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final slide = slides[index];
+
+            // Resolve linked brand name
+            String? brandName;
+            if (slide.brandId != null) {
+              brandsAsync.whenData((brands) {
+                try {
+                  brandName = brands.firstWhere((b) => b.id == slide.brandId).name;
+                } catch (_) {}
+              });
+            }
+
             return Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -419,6 +432,13 @@ class _ImageSlidesTab extends ConsumerWidget {
                       'Sort order: ${slide.sortOrder}',
                       style: TextStyle(color: Colors.grey[600], fontSize: 12),
                     ),
+                    if (brandName != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Linked Brand: $brandName',
+                        style: const TextStyle(color: Color(0xFF4F46E5), fontSize: 12, fontWeight: FontWeight.w500),
+                      ),
+                    ],
                     if (slide.linkUrl != null && slide.linkUrl!.isNotEmpty)
                       Text(
                         slide.linkUrl!,
@@ -430,6 +450,11 @@ class _ImageSlidesTab extends ConsumerWidget {
                   spacing: 4,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
+                    IconButton(
+                      tooltip: 'Edit slide',
+                      icon: const Icon(Icons.edit, color: Colors.blueAccent, size: 20),
+                      onPressed: () => _showAddSlideDialog(context, ref, slide),
+                    ),
                     IconButton(
                       tooltip: 'Move up',
                       icon: const Icon(Icons.arrow_upward, size: 18),
@@ -719,232 +744,283 @@ Future<void> _showAddFeaturedBrandDialog(BuildContext context, WidgetRef ref) as
   );
 }
 
-Future<void> _showAddSlideDialog(BuildContext context, WidgetRef ref) async {
-  final titleController = TextEditingController();
-  final descriptionController = TextEditingController();
-  final imageUrlController = TextEditingController();
-  final linkUrlController = TextEditingController();
-  final sortOrderController = TextEditingController(text: '0');
-  bool isActive = true;
+Future<void> _showAddSlideDialog(BuildContext context, WidgetRef ref, [ImageSlide? slide]) async {
+  final titleController = TextEditingController(text: slide?.title);
+  final descriptionController = TextEditingController(text: slide?.description);
+  final imageUrlController = TextEditingController(text: slide?.imageUrl);
+  final linkUrlController = TextEditingController(text: slide?.linkUrl);
+  final sortOrderController = TextEditingController(text: slide?.sortOrder.toString() ?? '0');
+  String? selectedBrandId = slide?.brandId;
+  bool isActive = slide?.isActive ?? true;
   bool isUploading = false;
 
   await showDialog(
     context: context,
     builder: (dialogContext) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          Future<void> pickAndUploadImage() async {
-            try {
-              final ImagePicker picker = ImagePicker();
-              final XFile? image =
-                  await picker.pickImage(source: ImageSource.gallery);
+      return Consumer(
+        builder: (context, ref, child) {
+          final brandsAsync = ref.watch(brandsNotifierProvider);
+          return StatefulBuilder(
+            builder: (context, setState) {
+              Future<void> pickAndUploadImage() async {
+                try {
+                  final ImagePicker picker = ImagePicker();
+                  final XFile? image =
+                      await picker.pickImage(source: ImageSource.gallery);
 
-              if (image == null) return;
+                  if (image == null) return;
 
-              setState(() => isUploading = true);
+                  setState(() => isUploading = true);
 
-              final supabase = Supabase.instance.client;
-              final bytes = await image.readAsBytes();
-              final fileExt = image.name.split('.').last;
-              final fileName =
-                  'slides/${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+                  final supabase = Supabase.instance.client;
+                  final bytes = await image.readAsBytes();
+                  final fileExt = image.name.split('.').last;
+                  final fileName =
+                      'slides/${DateTime.now().millisecondsSinceEpoch}.$fileExt';
 
-              await supabase.storage
-                  .from('product-photos')
-                  .uploadBinary(fileName, bytes);
+                  await supabase.storage
+                      .from('product-photos')
+                      .uploadBinary(fileName, bytes);
 
-              final imageUrl = supabase.storage
-                  .from('product-photos')
-                  .getPublicUrl(fileName);
+                  final imageUrl = supabase.storage
+                      .from('product-photos')
+                      .getPublicUrl(fileName);
 
-              imageUrlController.text = imageUrl;
-            } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error uploading image: $e')),
-                );
+                  imageUrlController.text = imageUrl;
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error uploading image: $e')),
+                    );
+                  }
+                } finally {
+                  setState(() => isUploading = false);
+                }
               }
-            } finally {
-              setState(() => isUploading = false);
-            }
-          }
 
-          return AlertDialog(
-            title: const Text('Add Image Slide'),
-            content: SizedBox(
-              width: 500,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: titleController,
-                      decoration: const InputDecoration(labelText: 'Title (optional)'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: descriptionController,
-                      decoration: const InputDecoration(labelText: 'Description (optional)'),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 8),
-                    if (isUploading)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else if (imageUrlController.text.isNotEmpty)
-                      Stack(
-                        alignment: Alignment.topRight,
-                        children: [
-                          Container(
-                            height: 150,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey[300]!),
-                              image: DecorationImage(
-                                image: NetworkImage(imageUrlController.text),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: CircleAvatar(
-                              backgroundColor: Colors.white,
-                              child: IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: pickAndUploadImage,
-                                tooltip: 'Change Image',
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    else
-                      Container(
-                        width: double.infinity,
-                        height: 120,
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[300]!, style: BorderStyle.none),
-                        ),
-                        child: InkWell(
-                          onTap: pickAndUploadImage,
-                          borderRadius: BorderRadius.circular(8),
-                          child: DottedBorder(
-                            borderType: BorderType.RRect,
-                            radius: const Radius.circular(8),
-                            color: Colors.grey[400]!,
-                            dashPattern: const [8, 4],
-                            child: const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.add_photo_alternate_outlined,
-                                      size: 40, color: Colors.blue),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'Upload Image from Device',
-                                    style: TextStyle(
-                                      color: Colors.blue,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Supports JPG, PNG, WEBP',
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 15),
-                    TextField(
-                      controller: imageUrlController,
-                      decoration: const InputDecoration(
-                        labelText: 'Image URL',
-                        helperText: 'Or paste a public image URL directly',
-                        prefixIcon: Icon(Icons.link),
-                      ),
-                      onChanged: (value) => setState(() {}),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: linkUrlController,
-                      decoration: const InputDecoration(
-                        labelText: 'Link URL (optional)',
-                        helperText: 'Where to open when user taps the slide',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: sortOrderController,
-                      decoration: const InputDecoration(labelText: 'Sort order (0 = default)'),
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
+              return AlertDialog(
+                title: Text(slide == null ? 'Add Image Slide' : 'Edit Image Slide'),
+                content: SizedBox(
+                  width: 500,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text('Active'),
-                        const SizedBox(width: 8),
-                        Switch(
-                          value: isActive,
-                          onChanged: (value) => setState(() {
-                            isActive = value;
-                          }),
+                        TextField(
+                          controller: titleController,
+                          decoration: const InputDecoration(labelText: 'Title (optional)'),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: descriptionController,
+                          decoration: const InputDecoration(labelText: 'Description (optional)'),
+                          maxLines: 3,
+                        ),
+                        const SizedBox(height: 8),
+                        if (isUploading)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else if (imageUrlController.text.isNotEmpty)
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              Container(
+                                height: 150,
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey[300]!),
+                                  image: DecorationImage(
+                                    image: NetworkImage(imageUrlController.text),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: CircleAvatar(
+                                  backgroundColor: Colors.white,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.edit, color: Colors.blue),
+                                    onPressed: pickAndUploadImage,
+                                    tooltip: 'Change Image',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          Container(
+                            width: double.infinity,
+                            height: 120,
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey[300]!, style: BorderStyle.none),
+                            ),
+                            child: InkWell(
+                              onTap: pickAndUploadImage,
+                              borderRadius: BorderRadius.circular(8),
+                              child: DottedBorder(
+                                borderType: BorderType.RRect,
+                                radius: const Radius.circular(8),
+                                color: Colors.grey[400]!,
+                                dashPattern: const [8, 4],
+                                child: const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.add_photo_alternate_outlined,
+                                          size: 40, color: Colors.blue),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'Upload Image from Device',
+                                        style: TextStyle(
+                                          color: Colors.blue,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Supports JPG, PNG, WEBP',
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 15),
+                        TextField(
+                          controller: imageUrlController,
+                          decoration: const InputDecoration(
+                            labelText: 'Image URL',
+                            helperText: 'Or paste a public image URL directly',
+                            prefixIcon: Icon(Icons.link),
+                          ),
+                          onChanged: (value) => setState(() {}),
+                        ),
+                        const SizedBox(height: 8),
+                        brandsAsync.when(
+                          data: (brands) {
+                            return DropdownButtonFormField<String>(
+                              value: selectedBrandId,
+                              decoration: const InputDecoration(
+                                labelText: 'Link to Brand (optional)',
+                                prefixIcon: Icon(Icons.branding_watermark_outlined),
+                              ),
+                              hint: const Text('None'),
+                              items: [
+                                const DropdownMenuItem<String>(
+                                  value: null,
+                                  child: Text('None'),
+                                ),
+                                ...brands.map((brand) => DropdownMenuItem<String>(
+                                  value: brand.id,
+                                  child: Text(brand.name),
+                                )),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedBrandId = value;
+                                });
+                              },
+                            );
+                          },
+                          loading: () => const LinearProgressIndicator(),
+                          error: (e, _) => Text('Error loading brands: $e'),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: linkUrlController,
+                          decoration: const InputDecoration(
+                            labelText: 'Link URL (optional)',
+                            helperText: 'Where to open when user taps the slide',
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: sortOrderController,
+                          decoration: const InputDecoration(labelText: 'Sort order (0 = default)'),
+                          keyboardType: TextInputType.number,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Text('Active'),
+                            const SizedBox(width: 8),
+                            Switch(
+                              value: isActive,
+                              onChanged: (value) => setState(() {
+                                isActive = value;
+                              }),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (imageUrlController.text.trim().isEmpty) {
-                    return;
-                  }
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (imageUrlController.text.trim().isEmpty) {
+                        return;
+                      }
 
-                  final sortOrder = int.tryParse(sortOrderController.text.trim()) ?? 0;
+                      final sortOrder = int.tryParse(sortOrderController.text.trim()) ?? 0;
 
-                  await ref.read(imageSlidesProvider.notifier).addSlide(
-                        title: titleController.text.trim().isEmpty
-                            ? null
-                            : titleController.text.trim(),
-                        description: descriptionController.text.trim().isEmpty
-                            ? null
-                            : descriptionController.text.trim(),
-                        imageUrl: imageUrlController.text.trim(),
-                        linkUrl: linkUrlController.text.trim().isEmpty
-                            ? null
-                            : linkUrlController.text.trim(),
-                        sortOrder: sortOrder,
-                        isActive: isActive,
-                      );
+                      if (slide == null) {
+                        await ref.read(imageSlidesProvider.notifier).addSlide(
+                              title: titleController.text.trim().isEmpty
+                                  ? null
+                                  : titleController.text.trim(),
+                              description: descriptionController.text.trim().isEmpty
+                                  ? null
+                                  : descriptionController.text.trim(),
+                              imageUrl: imageUrlController.text.trim(),
+                              linkUrl: linkUrlController.text.trim().isEmpty
+                                  ? null
+                                  : linkUrlController.text.trim(),
+                              brandId: selectedBrandId,
+                              sortOrder: sortOrder,
+                              isActive: isActive,
+                            );
+                      } else {
+                        await ref.read(imageSlidesProvider.notifier).updateSlide(
+                              slide.id,
+                              title: titleController.text,
+                              description: descriptionController.text,
+                              imageUrl: imageUrlController.text,
+                              linkUrl: linkUrlController.text,
+                              brandId: selectedBrandId,
+                              updateBrandId: true,
+                              sortOrder: sortOrder,
+                              isActive: isActive,
+                            );
+                      }
 
-                  if (context.mounted) {
-                    Navigator.of(dialogContext).pop();
-                  }
-                },
-                child: const Text('Save'),
-              ),
-            ],
+                      if (context.mounted) {
+                        Navigator.of(dialogContext).pop();
+                      }
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
+              );
+            },
           );
         },
       );

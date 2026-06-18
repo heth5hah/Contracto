@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../main.dart'; // Ensure access to supabaseProvider
 import '../categories/category_model.dart';
+import '../categories/categories_notifier_provider.dart';
 import 'brands_provider.dart';
 
 class AddEditBrandDialog extends ConsumerStatefulWidget {
@@ -19,7 +20,7 @@ class AddEditBrandDialog extends ConsumerStatefulWidget {
 class _AddEditBrandDialogState extends ConsumerState<AddEditBrandDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  String? _selectedCategoryName;
   final _logoUrlController = TextEditingController();
   final _catalogUrlController = TextEditingController();
   final _picker = ImagePicker();
@@ -33,7 +34,7 @@ class _AddEditBrandDialogState extends ConsumerState<AddEditBrandDialog> {
     super.initState();
     if (widget.brand != null) {
       _nameController.text = widget.brand!.name;
-      _descriptionController.text = widget.brand!.description ?? '';
+      _selectedCategoryName = widget.brand!.description;
       _logoUrlController.text = widget.brand!.logo ?? '';
       _catalogUrlController.text = widget.brand!.catalogPdfUrl ?? '';
       _isActive = widget.brand!.isActive;
@@ -43,7 +44,6 @@ class _AddEditBrandDialogState extends ConsumerState<AddEditBrandDialog> {
   @override
   void dispose() {
     _nameController.dispose();
-    _descriptionController.dispose();
     _logoUrlController.dispose();
     _catalogUrlController.dispose();
     super.dispose();
@@ -100,13 +100,66 @@ class _AddEditBrandDialogState extends ConsumerState<AddEditBrandDialog> {
                   },
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
+                Consumer(
+                  builder: (context, ref, _) {
+                    final categoriesAsync = ref.watch(categoriesNotifierProvider);
+                    return categoriesAsync.when(
+                      data: (categories) {
+                        // Build unique category names list
+                        final categoryNames = categories
+                            .map((c) => c.name)
+                            .toSet()
+                            .toList()
+                          ..sort();
+
+                        // Validate selected value exists in the list
+                        String? dropdownValue = _selectedCategoryName;
+                        if (dropdownValue != null && !categoryNames.contains(dropdownValue)) {
+                          // Try case-insensitive match
+                          final match = categoryNames.cast<String?>().firstWhere(
+                            (name) => name?.toLowerCase().trim() == dropdownValue!.toLowerCase().trim(),
+                            orElse: () => null,
+                          );
+                          dropdownValue = match;
+                          if (dropdownValue != _selectedCategoryName) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) setState(() => _selectedCategoryName = dropdownValue);
+                            });
+                          }
+                        }
+
+                        return DropdownButtonFormField<String>(
+                          value: dropdownValue,
+                          decoration: const InputDecoration(
+                            labelText: 'Category *',
+                            border: OutlineInputBorder(),
+                          ),
+                          hint: const Text('Select category...'),
+                          isExpanded: true,
+                          items: categoryNames
+                              .map((name) => DropdownMenuItem(
+                                    value: name,
+                                    child: Text(name),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedCategoryName = value;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select a category';
+                            }
+                            return null;
+                          },
+                        );
+                      },
+                      loading: () => const LinearProgressIndicator(),
+                      error: (e, _) => Text('Error loading categories: $e',
+                          style: const TextStyle(color: Colors.red)),
+                    );
+                  },
                 ),
                 const SizedBox(height: 16),
                 // Logo Upload Section
@@ -421,9 +474,7 @@ class _AddEditBrandDialogState extends ConsumerState<AddEditBrandDialog> {
       final brand = Brand(
         id: widget.brand?.id ?? '',
         name: _nameController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty 
-            ? null 
-            : _descriptionController.text.trim(),
+        description: _selectedCategoryName,
         logo: logoUrl,
         catalogPdfUrl: catalogUrl,
         isActive: _isActive,

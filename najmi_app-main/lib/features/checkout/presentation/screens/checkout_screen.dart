@@ -1382,23 +1382,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           return;
         }
 
-        // For bank transfer & credit — collect Transaction ID
-        if (mounted) setState(() => _isLoading = false);
-        final txnId = await _showTransactionIdDialog(
-          orderId: orderResult.orderId ?? '',
-          isCreditPayment: _selectedPaymentMethod == 'credit',
-        );
+        // For credit — collect Transaction ID. Skip for bank transfer.
+        if (_selectedPaymentMethod == 'credit') {
+          if (mounted) setState(() => _isLoading = false);
+          final txnId = await _showTransactionIdDialog(
+            orderId: orderResult.orderId ?? '',
+            isCreditPayment: true,
+          );
 
-        // Save transaction ID to the order
-        if (txnId != null && txnId.isNotEmpty && orderResult.orderId != null) {
-          try {
-            await SupabaseService.client.from('orders').update({
-              'transaction_id': txnId,
-              'payment_status': 'awaiting_confirmation',
-            }).eq('id', orderResult.orderId!);
-            print('✅ Transaction ID saved: $txnId');
-          } catch (e) {
-            print('⚠️ Failed to save transaction ID: $e');
+          // Save transaction ID to the order
+          if (txnId != null && txnId.isNotEmpty && orderResult.orderId != null) {
+            try {
+              await SupabaseService.client.from('orders').update({
+                'transaction_id': txnId,
+                'payment_status': 'awaiting_confirmation',
+              }).eq('id', orderResult.orderId!);
+              print('✅ Transaction ID saved: $txnId');
+            } catch (e) {
+              print('⚠️ Failed to save transaction ID: $e');
+            }
           }
         }
 
